@@ -1,0 +1,7 @@
+1. get entire map from relato;
+
+2. pontosPorItem é int no construtor mas é float no getter;
+
+3. tipoRelato no construtor de Regra null?
+
+4. esclarecer persistencia de tipos em resoluções (excesso de responsabilidade para um DAO);
