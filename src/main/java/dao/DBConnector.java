@@ -39,7 +39,7 @@ import java.net.*;
  * Define o local do banco de dados MongoDB para conexão.
  */
 
-class DBConnector {
+public class DBConnector {
 
     private static String connectionAddress = null, dbName = null, _URI = null;
     private static int port;
@@ -77,16 +77,17 @@ class DBConnector {
      * @return a conexão ao banco especificado.
      */
 
-    static synchronized MongoDatabase createConnection(String connectionType) {
+    public static synchronized MongoDatabase createConnection(String connectionType) {
         try {
-            if (connectionType.equals("padrao"))
-                return defaultLocalConnection();
-            else if (connectionType.equals("custom"))
-                return customConnection();
-            else if (connectionType.equals("network"))
-                return networkConnection();
-            else {
-                return null;
+            switch (connectionType) {
+                case "local":
+                    return defaultLocalConnection();
+                case "custom":
+                    return customConnection();
+                case "network":
+                    return networkConnection();
+                default:
+                    return null;
             }
         } catch (UnknownHostException e) {
             Logger.getLogger(DBConnector.class.getName()).log(Level.SEVERE, null, e);

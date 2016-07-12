@@ -93,7 +93,7 @@ public class Parecer_DAO implements ParecerRepository {
     @Override
     public void persisteParecer(Parecer parecer) {
 
-        if (this.getOne("id", parecer.getId()) == null) {
+        if (this.getOne("id", parecer.getId()) != null) {
             throw new IdentificadorExistente("id do parecer já existe");
         }
         this.save(parecer);
@@ -150,7 +150,7 @@ public class Parecer_DAO implements ParecerRepository {
         boolean radocIsRefereced = false;
 
         referenceSearchLoop : for(Document parecer : this.pareceresCollection.find()){
-            JsonElement jsonElem = new JsonParser().parse(parecer.getString("radocs"));
+// TODO: FIX NPE            JsonElement jsonElem = new JsonParser().parse(parecer.getString("radocs"));
             JsonArray radocsJSONArray = jsonElem.getAsJsonArray();
             for (JsonElement radoc : radocsJSONArray){
                 if (radoc.getAsString().equals(id)){
@@ -166,6 +166,8 @@ public class Parecer_DAO implements ParecerRepository {
     }
 
     private void save(Parecer parecer) {
+
+        Gson gson = new Gson();
 
         Document parecerDB = new Document()
                 .append("id", parecer.getId())
@@ -219,25 +221,25 @@ public class Parecer_DAO implements ParecerRepository {
 
     private String buildAvaliavelJSON(Avaliavel avaliavel) {
 
+        String avaliavelJSON = "\"avaliavelClass\":\"" + avaliavel.getClass().toString().substring(6) + "\",";
+
         if (avaliavel instanceof Pontuacao) {
 
             Pontuacao pontuacao = (Pontuacao) avaliavel;
             ArrayList<Pontuacao> array = new ArrayList<>();
             array.add(pontuacao);
-            return "\"avaliavelClass\":\"" + avaliavel.getClass().toString().substring(6) + "\"," +
-                    buildPontuacoesJSON(array).substring(2, buildPontuacoesJSON(array).length() - 2);
+            avaliavelJSON += buildPontuacoesJSON(array).substring(2, buildPontuacoesJSON(array).length() - 2);
 
         } else if (avaliavel instanceof Relato) {
 
             Relato relato = (Relato) avaliavel;
             ArrayList<Relato> array = new ArrayList<>();
             array.add(relato);
-            return "\"avaliavelClass\":\"" + avaliavel.getClass().toString().substring(6) + "\"," +
-                    this.radocDAOInstance.buildRelatosJSON(array).substring(2, this.radocDAOInstance.buildRelatosJSON(array).length() - 1);
+            avaliavelJSON += this.radocDAOInstance.buildRelatosJSON(array).substring(2, this.radocDAOInstance.buildRelatosJSON(array).length() - 2);
 
-        } else {
-            return null;
         }
+
+        return avaliavelJSON;
 
     }
 
@@ -247,8 +249,8 @@ public class Parecer_DAO implements ParecerRepository {
 
         for (int i = 0; i < pontuacoes.size(); i++) {
 
-            pontuacoesJSON += "{\"atributo\":\"" + pontuacoes.get(i).getAtributo() + "\"," +
-                    "\"valor\":\"" + getValorValue(pontuacoes.get(i).getValor()) + "\"}";
+            pontuacoesJSON += "{\"nome\":\"" + pontuacoes.get(i).getAtributo().replace("\"", "") + "\"," +
+                    "\"valor\":\"" + buildValorJSON(pontuacoes.get(i).getValor()) + "\"}";
 
             if (i < pontuacoes.size() - 1) {
                 pontuacoesJSON += ",";
@@ -260,10 +262,10 @@ public class Parecer_DAO implements ParecerRepository {
         return pontuacoesJSON;
     }
 
-    private String getValorValue(Valor valor) {
+    private String buildValorJSON(Valor valor) {
 
         if (valor.getString() != null) {
-            return valor.getString();
+            return valor.getString().replace("\"", "");
         } else if (valor.getFloat() != 0.0f) {
             return Float.toString(valor.getFloat());
         } else {
@@ -343,37 +345,58 @@ public class Parecer_DAO implements ParecerRepository {
         JsonElement jsonElem = new JsonParser().parse(notasStr);
         JsonArray notasJSONArray = jsonElem.getAsJsonArray();
 
-        for (JsonElement notasJSON : notasJSONArray) {
+        for (JsonElement notaJSONElement : notasJSONArray) {
 
-            JsonObject notaJSONObject = notasJSON.getAsJsonObject();
+            JsonObject notaJSONObject = notaJSONElement.getAsJsonObject();
 
-            String itemOriginalStr = notaJSONObject.get("itemOriginal").getAsString();
-            String itemOriginalClass = notaJSONObject.get("itemOriginal").getAsJsonObject().get("avaliavelClass").getAsString();
-            String itemNovoStr = notaJSONObject.get("itemNovo").getAsString();
-            String itemNovoClass = notaJSONObject.get("itemNovo").getAsJsonObject().get("avaliavelClass").getAsString();
+            String itemOriginalStr = notaJSONObject.get("itemOriginal").toString();
+            String itemOriginalClass = notaJSONObject.get("itemOriginal").getAsJsonObject().get("avaliavelClass").toString();
+            String itemNovoStr = notaJSONObject.get("itemNovo").getAsJsonObject().toString();
+            String itemNovoClass = notaJSONObject.get("itemNovo").getAsJsonObject().get("avaliavelClass").toString();
 
-            Avaliavel itemOriginal = getAvaliavelValue(itemOriginalStr.substring(itemOriginalStr.indexOf(",") + 1), itemOriginalClass);
-            Avaliavel itemNovo = getAvaliavelValue(itemNovoStr.substring(itemNovoStr.indexOf(",") + 1), itemNovoClass);
+            Avaliavel itemOriginal = getAvaliavelValue(
+                    "{" + itemOriginalStr.substring(itemOriginalStr.indexOf(",") + 1),
+                    itemOriginalClass.substring(1, itemOriginalClass.length() - 1)
+            );
+            Avaliavel itemNovo = getAvaliavelValue(
+                    "{" + itemNovoStr.substring(itemNovoStr.indexOf(",") + 1),
+                    itemNovoClass.substring(1, itemNovoClass.length() - 1)
+            );
 
             notasList.add(new Nota(itemOriginal, itemNovo, notaJSONObject.get("justificativa").getAsString()));
         }
-
         return notasList;
     }
 
-    private Avaliavel getAvaliavelValue(String avaliavelStr, String avaliavelClass) {
+    private Avaliavel getAvaliavelValue(String avaliavelJSONStr, String avaliavelClass) {
 
-        Type typeOfSrc = null;
+        //System.out.println("avaliavelJSONStr ATUAL: \n" + avaliavelJSONStr + "\n");
+
+        JsonElement avaliavelJSONElement = new JsonParser().parse(avaliavelJSONStr);
 
         if (avaliavelClass.equals(Pontuacao.class.toString().substring(6))) {
-            typeOfSrc = new TypeToken<Pontuacao>() {
-            }.getType();
+            JsonObject avaliavelJSONObject = avaliavelJSONElement.getAsJsonObject();
+            return new Pontuacao(avaliavelJSONObject.get("nome").toString(), getValorValue(avaliavelJSONObject.get("valor").toString()));
         } else if (avaliavelClass.equals(Relato.class.toString().substring(6))) {
-            typeOfSrc = new TypeToken<Relato>() {
-            }.getType();
+            Type typeOfSrc = new TypeToken<Relato>() {}.getType();
+            return new Gson().fromJson(avaliavelJSONElement, typeOfSrc);
         }
+        return null;
+    }
 
-        return new Gson().fromJson(avaliavelStr, typeOfSrc);
+    private Valor getValorValue(String valorStr) {
+
+        try {
+            return new Valor(Float.parseFloat(valorStr));
+        } catch (NumberFormatException e) {
+            if (valorStr.equalsIgnoreCase("true")) {
+                return new Valor(true);
+            } else if (valorStr.equalsIgnoreCase("false")) {
+                return new Valor(false);
+            } else {
+                return new Valor(valorStr);
+            }
+        }
     }
 
     private void delete(String chave, Object valor) {
@@ -392,5 +415,4 @@ public class Parecer_DAO implements ParecerRepository {
 
         this.pareceresCollection.updateOne(new Document(chave, valor), new Document("$set", parecerDB));
     }
-
 }
