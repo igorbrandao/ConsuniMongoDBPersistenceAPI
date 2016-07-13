@@ -36,19 +36,19 @@ import java.util.*;
  *
  */
 
-public class Parecer_DAO implements ParecerRepository {
+public class ParecerDAO implements ParecerRepository {
 
-    private static Parecer_DAO instance = null;
+    private static ParecerDAO instance = null;
     private final MongoCollection<Document> pareceresCollection;
-    private final Radoc_DAO radocDAOInstance;
+    private final RadocDAO radocDAOInstance;
 
-    private Parecer_DAO(String connectionType) {
+    private ParecerDAO(String connectionType) {
         this.pareceresCollection = DBConnector.createConnection(connectionType).getCollection("pareceres");
-        this.radocDAOInstance = Radoc_DAO.getInstance(connectionType);
+        this.radocDAOInstance = RadocDAO.getInstance(connectionType);
     }
 
-    public static synchronized Parecer_DAO getInstance(String connectionType) {
-        return instance == null ? new Parecer_DAO(connectionType) : instance;
+    public static ParecerDAO getInstance(String connectionType) {
+        return instance == null ? new ParecerDAO(connectionType) : instance;
     }
 
     @Override
@@ -69,6 +69,8 @@ public class Parecer_DAO implements ParecerRepository {
     @Override
     public void removeNota(String idParecer, Avaliavel original) {
 
+        boolean found = false;
+
         Parecer parecer = this.getOne("id", idParecer);
 
         if (parecer == null) {
@@ -80,13 +82,15 @@ public class Parecer_DAO implements ParecerRepository {
         for (Nota nota : parecer.getNotas()) {
             if (nota.getItemOriginal().equals(original)) {
                 notaAserRemovida = nota;
+                found = true;
                 break;
             }
         }
 
-        parecer.getNotas().remove(notaAserRemovida);
-
-        this.update("id", idParecer, parecer);
+        if(found) {
+            parecer.getNotas().remove(notaAserRemovida);
+            this.update("id", idParecer, parecer);
+        }
 
     }
 
@@ -150,7 +154,7 @@ public class Parecer_DAO implements ParecerRepository {
         boolean radocIsRefereced = false;
 
         referenceSearchLoop : for(Document parecer : this.pareceresCollection.find()){
-// TODO: FIX NPE            JsonElement jsonElem = new JsonParser().parse(parecer.getString("radocs"));
+            JsonElement jsonElem = new JsonParser().parse(parecer.getString("radocIds"));
             JsonArray radocsJSONArray = jsonElem.getAsJsonArray();
             for (JsonElement radoc : radocsJSONArray){
                 if (radoc.getAsString().equals(id)){
@@ -159,6 +163,7 @@ public class Parecer_DAO implements ParecerRepository {
                 }
             }
         }
+
         if(!radocIsRefereced) {
             radocDAOInstance.delete("id", id);
         }
@@ -166,8 +171,6 @@ public class Parecer_DAO implements ParecerRepository {
     }
 
     private void save(Parecer parecer) {
-
-        Gson gson = new Gson();
 
         Document parecerDB = new Document()
                 .append("id", parecer.getId())
@@ -186,7 +189,7 @@ public class Parecer_DAO implements ParecerRepository {
 
         for (int i = 0; i < radocs.size(); i++) {
 
-            radocsJSON += "\"" + radocs.get(i) + "\"";
+            radocsJSON += "\"" + radocs.get(i).replace("\"", "") + "\"";
 
             if (i < radocs.size() - 1) {
                 radocsJSON += ",";
@@ -199,7 +202,7 @@ public class Parecer_DAO implements ParecerRepository {
         return radocsJSON;
     }
 
-    private String buildNotasJSON(List<Nota> notas) {
+    public String buildNotasJSON(List<Nota> notas) {
 
         String notasJSON = "[";
 
@@ -235,7 +238,7 @@ public class Parecer_DAO implements ParecerRepository {
             Relato relato = (Relato) avaliavel;
             ArrayList<Relato> array = new ArrayList<>();
             array.add(relato);
-            avaliavelJSON += this.radocDAOInstance.buildRelatosJSON(array).substring(2, this.radocDAOInstance.buildRelatosJSON(array).length() - 2);
+            avaliavelJSON += radocDAOInstance.buildRelatosJSON(array).substring(2, radocDAOInstance.buildRelatosJSON(array).length() - 2);
 
         }
 
@@ -295,6 +298,7 @@ public class Parecer_DAO implements ParecerRepository {
 
     private List<String> getRadocIdsList(String radocIdsStr) {
 
+        radocIdsStr = radocIdsStr.replace("[", "").replace("]", "");
         List<String> listRadocIds = new ArrayList<>();
         Collections.addAll(listRadocIds, radocIdsStr.split(","));
         return listRadocIds;
@@ -369,8 +373,6 @@ public class Parecer_DAO implements ParecerRepository {
     }
 
     private Avaliavel getAvaliavelValue(String avaliavelJSONStr, String avaliavelClass) {
-
-        //System.out.println("avaliavelJSONStr ATUAL: \n" + avaliavelJSONStr + "\n");
 
         JsonElement avaliavelJSONElement = new JsonParser().parse(avaliavelJSONStr);
 

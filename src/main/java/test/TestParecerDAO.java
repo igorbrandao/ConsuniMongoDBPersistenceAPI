@@ -30,19 +30,23 @@ package test;
 import br.ufg.inf.es.saep.sandbox.dominio.*;
 import com.mongodb.client.MongoCollection;
 import dao.DBConnector;
-import dao.Parecer_DAO;
+import dao.ParecerDAO;
 import org.bson.Document;
 
 import java.util.*;
 
 public class TestParecerDAO {
 
-    static private Parecer_DAO parecer_dao = Parecer_DAO.getInstance("local");
+    static private ParecerDAO parecer_dao = ParecerDAO.getInstance("local");
     static private MongoCollection<Document> pareceresCollection = DBConnector.createConnection("local").getCollection("pareceres");
     static private MongoCollection<Document> radocsCollection = DBConnector.createConnection("local").getCollection("radocs");
     static private boolean[] testResults = new boolean[9];
 
+    static private List<String> radocIds;
+    static private List<Pontuacao> pontuacoes;
+    static private List<Nota> notas;
     static private Parecer parecer;
+    static private Parecer parecerModificado;
     static private Avaliavel relato3;
     static private Nota nota3;
     static private Nota notaNova;
@@ -104,7 +108,7 @@ public class TestParecerDAO {
         Avaliavel relato1 = new Relato("tipoDoRelato1", relato1Map);
         Avaliavel relato2 = new Relato("tipoDoRelato2", relato2Map);
         relato3 = new Relato("tipoDoRelato3", relato3Map);
-        Avaliavel relatoNovo = new Relato("tipoDoRelatoNovo", relato3Map);
+        Avaliavel relatoNovo = new Relato("tipoDoRelatoNovo", relatoNovoMap);
 
         Avaliavel pontuacao1 = new Pontuacao("nomeDaPontuacao1", new Valor("valorDaPontuacao1"));
         Avaliavel pontuacao2 = new Pontuacao("nomeDaPontuacao2", new Valor(true));
@@ -117,17 +121,16 @@ public class TestParecerDAO {
 
         notaNova = new Nota(relatoNovo, pontuacaoNova, "justificativaDaNotaNova");
 
-        List<String> radocIds = new ArrayList<>();
-        radocIds.add("idDoRadoc1");
+        radocIds = new ArrayList<>();
         radocIds.add("idDoRadoc2");
         radocIds.add("idDoRadoc3");
 
-        List<Pontuacao> pontuacoes = new ArrayList<>();
+        pontuacoes = new ArrayList<>();
         pontuacoes.add(new Pontuacao("pontuacao1", new Valor("valorPontuacao1")));
         pontuacoes.add(new Pontuacao("pontuacao2", new Valor(new Random().nextBoolean())));
         pontuacoes.add(new Pontuacao("pontuacao3", new Valor(new Random().nextInt(3) + 1)));
 
-        List<Nota> notas = new ArrayList<>();
+        notas = new ArrayList<>();
         notas.add(nota1);
         notas.add(nota2);
         notas.add(nota3);
@@ -135,7 +138,7 @@ public class TestParecerDAO {
         List<Relato> relatos = new ArrayList<>();
         relatos.add((Relato) relato1);
         relatos.add((Relato) relato2);
-        relatos.add((Relato)relato3);
+        relatos.add((Relato) relato3);
 
         parecer = new Parecer("idDoParecer", "idDaResolucao", radocIds, pontuacoes, "fundamentacaoDoParecer", notas);
 
@@ -144,21 +147,21 @@ public class TestParecerDAO {
 
     private static boolean test_adicionaNota() {
         parecer_dao.adicionaNota("idDoParecer", notaNova);
-        Parecer parecerModificado = parecer;
+        parecerModificado = new Parecer("idDoParecer", "idDaResolucao", radocIds, pontuacoes, "fundamentacaoDoParecer", notas);
         parecerModificado.getNotas().add(notaNova);
-        return parecerModificado.equals(parecer_dao.byId("idDoParecer"));
+        return parecerModificado.getNotas().equals(parecer_dao.byId("idDoParecer").getNotas());
     }
 
     private static boolean test_removeNota() {
         parecer_dao.removeNota("idDoParecer", relato3);
-        Parecer parecerModificado = parecer;
+        parecerModificado = new Parecer("idDoParecer", "idDaResolucao", radocIds, pontuacoes, "fundamentacaoDoParecer", notas);
         parecerModificado.getNotas().remove(nota3);
-        return parecerModificado.equals(parecer_dao.byId("idDoParecer"));
+        return parecerModificado.getNotas().equals(parecer_dao.byId("idDoParecer").getNotas());
     }
 
     private static boolean test_persisteParecer() {
         parecer_dao.persisteParecer(parecer);
-        return pareceresCollection.find(new Document().append("id", "idDoParecer")) != null;
+        return pareceresCollection.find(new Document().append("id", "idDoParecer")).first() != null;
     }
 
     private static boolean test_atualizaFundamentacao() {
@@ -167,26 +170,26 @@ public class TestParecerDAO {
     }
 
     private static boolean test_byId() {
-        return parecer.equals(parecer_dao.byId("idDoParecer"));
+        return parecer.getId().equals(parecer_dao.byId("idDoParecer").getId());
     }
 
     private static boolean test_removeParecer() {
         parecer_dao.removeParecer("idDoParecer");
-        return pareceresCollection.find(new Document().append("id", "idDoParecer")) == null;
+        return pareceresCollection.find(new Document().append("id", "idDoParecer")).first() == null;
     }
 
     private static boolean test_radocById() {
-        return radoc.equals(parecer_dao.radocById("idDoRadoc1"));
+        return radoc.getId().equals(parecer_dao.radocById("idDoRadoc1").getId());
     }
 
     private static boolean test_persisteRadoc() {
         parecer_dao.persisteRadoc(radoc);
-        return radocsCollection.find(new Document().append("id", "idDoRadoc1")) != null;
+        return radocsCollection.find(new Document().append("id", "idDoRadoc1")).first() != null;
     }
 
     private static boolean test_removeRadoc() {
         parecer_dao.removeRadoc("idDoRadoc1");
-        return radocsCollection.find(new Document().append("id", "idDoRadoc1")) == null;
+        return radocsCollection.find(new Document().append("id", "idDoRadoc1")).first() == null;
     }
 
 }

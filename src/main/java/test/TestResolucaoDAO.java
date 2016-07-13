@@ -30,14 +30,14 @@ package test;
 import br.ufg.inf.es.saep.sandbox.dominio.*;
 import com.mongodb.client.MongoCollection;
 import dao.DBConnector;
-import dao.Resolucao_DAO;
+import dao.ResolucaoDAO;
 import org.bson.Document;
 
 import java.util.*;
 
 public class TestResolucaoDAO {
 
-    static private Resolucao_DAO resolucao_dao = Resolucao_DAO.getInstance("local");
+    static private ResolucaoDAO resolucao_dao = ResolucaoDAO.getInstance("local");
     static private MongoCollection<Document> resolucoesCollection = DBConnector.createConnection("local").getCollection("resolucoes");
     static private MongoCollection<Document> tiposCollection = DBConnector.createConnection("local").getCollection("tipos");
     static private boolean[] testResults = new boolean[8];
@@ -74,6 +74,7 @@ public class TestResolucaoDAO {
                 "test_tiposPeloNome() -> " + testResults[6] + "\n" +
                 "test_removeTipo() -> " + testResults[7] + "\n");
         //*/
+
         /* Save JSON Object using Gson
         Gson gson = new Gson();
         Type type = new TypeToken<Map<ObjectKey, ObjectValue>>(){}.getType();
@@ -110,45 +111,58 @@ public class TestResolucaoDAO {
         resolucao2 = new Resolucao("idDaResolucao2", "nomeDaResolucao2", "descricaoDaResolucao2", new Date(currentTime), regras);
 
         Set<Atributo> atributos = new HashSet<>();
-        atributos.add(new Atributo("nomeDoAtributo1", "descricaoDoAtributo1", 1));
-        atributos.add(new Atributo("nomeDoAtributo2", "descricaoDoAtributo2", 2));
-        atributos.add(new Atributo("nomeDoAtributo3", "descricaoDoAtributo3", 3));
+        atributos.add(new Atributo("nomeDoAtributo1", "descricaoDoAtributo1", 0));
+        atributos.add(new Atributo("nomeDoAtributo2", "descricaoDoAtributo2", 1));
+        atributos.add(new Atributo("nomeDoAtributo3", "descricaoDoAtributo3", 2));
 
         tipo1 = new Tipo("idDoTipo1", "nomeDoTipo1", "descricaoDoTipo1", atributos);
         tipo2 = new Tipo("idDoTipo2", "nomeDoTipo2", "descricaoDoTipo2", atributos);
 
     }
 
-    private static boolean test_byId(){
-        return resolucao1.equals(resolucao_dao.byId("idDaResolucao1"));
+    private static boolean test_byId() {
+        return resolucao1.getId().equals(resolucao_dao.byId("idDaResolucao1").getId());
     }
 
-    private static boolean test_persiste(){
+    private static boolean test_persiste() {
         resolucao_dao.persiste(resolucao1);
-        return resolucoesCollection.find(new Document().append("id", "idDaResolucao1")) != null;
+        return resolucoesCollection.find(new Document().append("id", "idDaResolucao1")).first() != null;
     }
 
-    private static boolean test_remove(){
+    private static boolean test_remove() {
         resolucao_dao.remove("idDaResolucao1");
-        return resolucoesCollection.find(new Document().append("id", "idDaResolucao1")) == null;
+        return resolucoesCollection.find(new Document().append("id", "idDaResolucao1")).first() == null;
     }
 
-    private static boolean test_resolucoes(){}
+    private static boolean test_resolucoes() {
+        List<String> resolucoes = resolucao_dao.resolucoes();
+        List<String> resolucoesCompare = new ArrayList<>();
+        resolucoesCompare.add("idDaResolucao1");
+        resolucoesCompare.add("idDaResolucao2");
+        return resolucoesCompare.equals(resolucoes);
+    }
 
-    private static boolean test_persisteTipo(){
+    private static boolean test_persisteTipo() {
         resolucao_dao.persisteTipo(tipo1);
-        return tiposCollection.find(new Document().append("id", "idDoTipo1")) != null;
+        return tiposCollection.find(new Document().append("id", "idDoTipo1")).first() != null;
     }
 
-    private static boolean test_removeTipo(){
+    private static boolean test_removeTipo() {
         resolucao_dao.removeTipo("idDoTipo1");
-        return tiposCollection.find(new Document().append("id", "idDoTipo1")) == null;
+        return tiposCollection.find(new Document().append("id", "idDoTipo1")).first() == null;
     }
 
-    private static boolean test_tipoPeloCodigo(){
-        return tipo1.equals(resolucao_dao.tipoPeloCodigo("idDoTipo1"));
+    private static boolean test_tipoPeloCodigo() {
+        return tipo1.getId().equals(resolucao_dao.tipoPeloCodigo("idDoTipo1").getId());
     }
 
-    private static boolean test_tiposPeloNome(){}
+    private static boolean test_tiposPeloNome() {
+        List<Tipo> tipos = resolucao_dao.tiposPeloNome("Tipo");
+        List<Tipo> tiposCompare = new ArrayList<>();
+        tiposCompare.add(tipo1);
+        tiposCompare.add(tipo2);
+        System.out.println("TIPOS:");
+        return tiposCompare.equals(tipos);
+    }
 
 }

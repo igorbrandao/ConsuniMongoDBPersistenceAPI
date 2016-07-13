@@ -2,14 +2,10 @@ package dao;
 
 import br.ufg.inf.es.saep.sandbox.dominio.Radoc;
 import br.ufg.inf.es.saep.sandbox.dominio.Relato;
-import br.ufg.inf.es.saep.sandbox.dominio.Valor;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-import org.omg.CORBA.Object;
 
 import java.lang.reflect.Type;
 import java.util.*;
@@ -41,17 +37,17 @@ import java.util.*;
  *
  */
 
-class Radoc_DAO {
+class RadocDAO {
 
     private final MongoCollection<Document> radocsCollection;
-    private static Radoc_DAO instance = null;
+    private static RadocDAO instance = null;
 
-    private Radoc_DAO(String connectionType) {
+    private RadocDAO(String connectionType) {
         this.radocsCollection = DBConnector.createConnection(connectionType).getCollection("radocs");
     }
 
-    static synchronized Radoc_DAO getInstance(String connectionType) {
-        return instance == null ? new Radoc_DAO(connectionType) : instance;
+    static RadocDAO getInstance(String connectionType) {
+        return instance == null ? new RadocDAO(connectionType) : instance;
     }
 
     void save(Radoc radoc) {

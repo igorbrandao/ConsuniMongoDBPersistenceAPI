@@ -6,17 +6,17 @@ import org.bson.Document;
 
 import java.util.*;
 
-class Tipo_DAO {
+class TipoDAO {
 
-    private static Tipo_DAO instance = null;
+    private static TipoDAO instance = null;
     private final MongoCollection<Document> tiposCollection;
 
-    private Tipo_DAO(String connectionType) {
+    private TipoDAO(String connectionType) {
         this.tiposCollection = DBConnector.createConnection(connectionType).getCollection("tipos");
     }
 
-    static synchronized Tipo_DAO getInstance(String connectionType) {
-        return instance == null ? new Tipo_DAO(connectionType) : instance;
+    static TipoDAO getInstance(String connectionType) {
+        return instance == null ? new TipoDAO(connectionType) : instance;
     }
 
     void save(Tipo tipo) {
@@ -35,11 +35,11 @@ class Tipo_DAO {
 
         int i = 0;
 
-        for (Atributo atributo : (Atributo[]) atributos.toArray()) {
+        for (Iterator<Atributo> atributosIterator = atributos.iterator(); atributosIterator.hasNext(); ) {
 
-            atributosJSON += "{\"nome\":\"" + atributo.getNome() + "\"," +
-                    "\"descricao\":\"" + atributo.getDescricao() + "\"," +
-                    "\"tipo\":\"" + atributo.getTipo() + "\"}";
+            atributosJSON += "{\"nome\":\"" + atributosIterator.next().getNome() + "\"," +
+                    "\"descricao\":\"" + atributosIterator.next().getDescricao() + "\"," +
+                    "\"tipo\":\"" + atributosIterator.next().getTipo() + "\"}";
 
             if (i < atributos.toArray().length - 1) {
                 atributosJSON += ",";
@@ -71,22 +71,9 @@ class Tipo_DAO {
 
     private Set<Atributo> getListaAtributos(String atributosStr) {
 
-        String mock = "[" +
-                "{" +
-                "\"nome\":\"nome1\"," +
-                "\"descricao\":\"descricao1\"," +
-                "\"tipo\":\"1\"" +
-                "}," +
-                "{" +
-                "\"nome\":\"nome2\"," +
-                "\"descricao\":\"descricao2\"," +
-                "\"tipo\":\"2\"" +
-                "}" +
-                "]";
-
         Set<Atributo> setAtributos = new HashSet<>();
         List<String[]> chaves_valores_atributos = new ArrayList<>();
-        String[] atributos = atributosStr.split("}");//mock.split("}");
+        String[] atributos = atributosStr.split("}");
 
         for (int i = 0; i < atributos.length - 1; i++) {
             atributos[i] = atributos[i].substring(2);
@@ -121,11 +108,11 @@ class Tipo_DAO {
         tiposCollection.deleteOne(new Document(chave, valor));
     }
 
-    List<Tipo> getListByName(String chave, Object valor) {
+    List<Tipo> getListByPartialValue(String chave, String valor) {
 
         List<Tipo> tipos = new ArrayList<>();
 
-        for (Document tipo : this.tiposCollection.find(new Document(chave, valor))) {
+        for (Document tipo : this.tiposCollection.find(new Document().append(chave, new Document("$regex", ".*" + valor + ".*")))) {
             tipos.add(new Tipo(
                             tipo.getString("id"),
                             tipo.getString("nome"),

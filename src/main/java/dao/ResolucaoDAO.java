@@ -1,9 +1,6 @@
 package dao;
 
 import br.ufg.inf.es.saep.sandbox.dominio.*;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
@@ -39,19 +36,19 @@ import java.util.*;
  *
  */
 
-public class Resolucao_DAO implements ResolucaoRepository {
+public class ResolucaoDAO implements ResolucaoRepository {
 
-    private static Resolucao_DAO instance = null;
+    private static ResolucaoDAO instance = null;
     private final MongoCollection<Document> resolucoesCollection;
-    private final Tipo_DAO tipoDAOInstance;
+    private final TipoDAO tipoDAOInstance;
 
-    private Resolucao_DAO(String connectionType) {
+    private ResolucaoDAO(String connectionType) {
         this.resolucoesCollection = DBConnector.createConnection(connectionType).getCollection("resolucoes");
-        this.tipoDAOInstance = Tipo_DAO.getInstance(connectionType);
+        this.tipoDAOInstance = TipoDAO.getInstance(connectionType);
     }
 
-    public static synchronized Resolucao_DAO getInstance(String connectionType) {
-        return instance == null ? new Resolucao_DAO(connectionType) : instance;
+    public static ResolucaoDAO getInstance(String connectionType) {
+        return instance == null ? new ResolucaoDAO(connectionType) : instance;
     }
 
     @Override
@@ -74,8 +71,8 @@ public class Resolucao_DAO implements ResolucaoRepository {
     }
 
     @Override
-    public List<Tipo> tiposPeloNome(String nome) {
-        return this.tipoDAOInstance.getListByName("nome", nome);
+    public List<Tipo> tiposPeloNome(String nomeParcial) {
+        return this.tipoDAOInstance.getListByPartialValue("nome", nomeParcial);
     }
 
     @Override
@@ -99,7 +96,7 @@ public class Resolucao_DAO implements ResolucaoRepository {
         List<String> resolucoes = new ArrayList<>();
 
         for (Document resolucao : this.resolucoesCollection.find()) {
-            resolucoes.add(resolucao.toJson());
+            resolucoes.add(resolucao.getString("id"));
         }
 
         return resolucoes.isEmpty() ? null : resolucoes;
@@ -135,9 +132,8 @@ public class Resolucao_DAO implements ResolucaoRepository {
 
         for (int i = 0; i < regras.size(); i++) {
 
-            //*
             regrasJSON += "{\"tipo\":\"" + regras.get(i).getTipo() + "\"," +
-                            "\"descricao\":\"" + regras.get(i).getDescricao() + ",\"" +
+                            "\"descricao\":\"" + regras.get(i).getDescricao() + "\"," +
                             "\"tipoRelato\":\"" + regras.get(i).getTipoRelato() + "\"," +
                             "\"expressao\":\"" + regras.get(i).getExpressao() + "\"," +
                             "\"dependeDe\":" + buildDependeDeString(regras.get(i).getDependeDe()) + "," +
@@ -147,7 +143,6 @@ public class Resolucao_DAO implements ResolucaoRepository {
                             "\"minimo\":\"" + regras.get(i).getValorMinimo() + "\"," +
                             "\"maximo\":\"" + regras.get(i).getValorMaximo() + "\"," +
                             "\"variavel\":\"" + regras.get(i).getVariavel() + "\"}";
-            //*/
 
             if (i < regras.size() - 1) {
                 regrasJSON += ",";
@@ -169,7 +164,7 @@ public class Resolucao_DAO implements ResolucaoRepository {
             dependeDeJSON += "\"" + dependeDe.get(i) + "\"";
 
             if (i < dependeDe.size() - 1) {
-                dependeDeJSON += ",";
+                dependeDeJSON += "=";
             }
 
         }
@@ -207,38 +202,9 @@ public class Resolucao_DAO implements ResolucaoRepository {
 
     private List<Regra> getListaRegras(String regrasStr) {
 
-        String mock = "[" +
-                "{" +
-                "\"tipo\":\"2\"," +
-                "\"descricao\":\"descricao1\"," +
-                "\"maximo\":\"9.5\"," +
-                "\"minimo\":\"3.0\"," +
-                "\"variavel\":\"variavel1\"," +
-                "\"expressao\":\"expressao1\"," +
-                "\"entao\":\"entao1\"," +
-                "\"senao\":\"senao1\"," +
-                "\"tipoRelato\":\"tipoRelato1\"," +
-                "\"pontosPorItem\":\"1\"," +
-                "\"dependeDe\":[\"dependeDe1,dependeDe2,dependeDe3\"]" +
-                "}," +
-                "{" +
-                "\"tipo\":\"2\"," +
-                "\"descricao\":\"descricao2\"," +
-                "\"maximo\":\"8.3\"," +
-                "\"minimo\":\"4.1\"," +
-                "\"variavel\":\"variavel2\"," +
-                "\"expressao\":\"expressao2\"," +
-                "\"entao\":\"entao2\"," +
-                "\"senao\":\"senao2\"," +
-                "\"tipoRelato\":\"tipoRelato2\"," +
-                "\"pontosPorItem\":\"2\"," +
-                "\"dependeDe\":\"dependeDe4=dependeDe5=dependeDe6\"" +
-                "}" +
-                "]";
-
         List<Regra> listRegras = new ArrayList<>();
         List<String[]> chaves_valores_regras = new ArrayList<>();
-        String[] regras = regrasStr.split("}");//mock.split("}");
+        String[] regras = regrasStr.split("}");
 
         for (int i = 0; i < regras.length - 1; i++) {
             regras[i] = regras[i].substring(2);
@@ -277,27 +243,15 @@ public class Resolucao_DAO implements ResolucaoRepository {
     }
 
     private static List<String> getListDependeDe(String dependeDeStr) {
+
         List<String> listDependeDe = new ArrayList<>();
-
-        Collections.addAll(listDependeDe, dependeDeStr.split(","));
-
+        Collections.addAll(listDependeDe, dependeDeStr.split("="));
         return listDependeDe;
+
     }
 
     private DeleteResult delete(String chave, Object valor) {
         return this.resolucoesCollection.deleteOne(new Document(chave, valor));
-    }
-
-    private void update(String chave, Object valor, Resolucao resolucao) {
-
-        Document resolucaoDB = new Document()
-                .append("id", resolucao.getId())
-                .append("nome", resolucao.getNome())
-                .append("descricao", resolucao.getDescricao())
-                .append("dataAprovavao", resolucao.getDataAprovacao().toString())
-                .append("regras", buildRegrasJSON(resolucao.getRegras()));
-
-        this.resolucoesCollection.updateOne(new Document(chave, valor), new Document("$set", resolucaoDB));
     }
 
 }

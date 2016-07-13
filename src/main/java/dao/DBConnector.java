@@ -77,7 +77,7 @@ public class DBConnector {
      * @return a conexão ao banco especificado.
      */
 
-    public static synchronized MongoDatabase createConnection(String connectionType) {
+    public static MongoDatabase createConnection(String connectionType) {
         try {
             switch (connectionType) {
                 case "local":
