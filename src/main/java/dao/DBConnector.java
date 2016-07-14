@@ -8,33 +8,6 @@ import com.mongodb.*;
 
 import java.net.*;
 
-/*
- * The MIT License
- *
- * Copyright 2015 Igor.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- * Created by Igor on 6/11/2016.
- *
- */
-
 /**
  * Define o local do banco de dados MongoDB para conexão.
  */
@@ -44,14 +17,23 @@ public class DBConnector {
     private static String connectionAddress = null, dbName = null, _URI = null;
     private static int port;
 
-    private DBConnector() {
-    }
+    /**
+     * Customiza as variáveis necessárias para estabelecer uma conexão personalizada.
+     * @param connectionAddress endereço da conexão.
+     * @param dbName nome do banco de dados a ser criado.
+     * @param port valor inteiro da porta a ser utilizada.
+     */
 
     static void defineCustomConnectionParams(String connectionAddress, String dbName, int port) {
         DBConnector.connectionAddress = connectionAddress;
         DBConnector.dbName = dbName;
         DBConnector.port = port;
     }
+
+    /**
+     * Customiza as variáveis necessárias para estabelecer uma conexão pela rede.
+     * @param _URI A cadeia de caracteres representando uma URI para o driver do Mongo.
+     */
 
     static void defineNetworkConnectionURI(String _URI) {
         DBConnector._URI = _URI;
@@ -71,7 +53,7 @@ public class DBConnector {
     }
 
     /**
-     * @param connectionType use "padrao" para conectar a um banco de dados em "localhost" utilizando a porta padrão, 'custom' para conexão local personalizada ou 'network' para conectar com um banco de dados em um endereço externo. Observe que para usar as conexões 'custom'  e 'network', os parâmetros devem ser definidos usando-se o respectivo método:<br>
+     * @param connectionType use "local" para conectar a um banco de dados em "localhost" utilizando a porta padrão 27017, 'custom' para conexão local personalizada ou 'network' para conectar com um banco de dados em um endereço externo. Observe que para usar as conexões 'custom'  e 'network', os parâmetros devem ser definidos usando-se o respectivo método:<br>
      * {@link #defineCustomConnectionParams(String, String, int)}<br>
      * {@link #defineNetworkConnectionURI(String)}
      * @return a conexão ao banco especificado.

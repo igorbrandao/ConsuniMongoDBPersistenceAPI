@@ -15,6 +15,12 @@ class TipoDAO {
         this.tiposCollection = DBConnector.createConnection(connectionType).getCollection("tipos");
     }
 
+    /**
+     * Instancia um data access object para a coleção de tipos
+     * @param connectionType string que define o tipo de conexão com o banco a ser feita. Veja {@link dao.DBConnector#createConnection(String) createConnection}
+     * @return O objeto TipoDAO para operações em elementos dessa entidade no banco de dados.
+     */
+
     static TipoDAO getInstance(String connectionType) {
         return instance == null ? new TipoDAO(connectionType) : instance;
     }

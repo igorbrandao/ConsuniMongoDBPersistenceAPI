@@ -9,33 +9,6 @@ import org.bson.Document;
 import java.lang.reflect.Type;
 import java.util.*;
 
-/*
- * The MIT License
- *
- * Copyright 2015 Igor.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- * Created by Igor on 6/11/2016.
- *
- */
-
 public class ParecerDAO implements ParecerRepository {
 
     private static ParecerDAO instance = null;
@@ -46,6 +19,12 @@ public class ParecerDAO implements ParecerRepository {
         this.pareceresCollection = DBConnector.createConnection(connectionType).getCollection("pareceres");
         this.radocDAOInstance = RadocDAO.getInstance(connectionType);
     }
+
+    /**
+     * Instancia um data access object para a coleção de pareceres;
+     * @param connectionType string que define o tipo de conexão com o banco a ser feita. Veja {@link dao.DBConnector#createConnection(String) createConnection}
+     * @return O objeto ParecerDAO para operações em elementos dessa entidade no banco de dados.
+     */
 
     public static ParecerDAO getInstance(String connectionType) {
         return instance == null ? new ParecerDAO(connectionType) : instance;
