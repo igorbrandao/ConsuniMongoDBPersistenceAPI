@@ -181,7 +181,7 @@ public class ParecerDAO implements ParecerRepository {
         return radocsJSON;
     }
 
-    public String buildNotasJSON(List<Nota> notas) {
+    private String buildNotasJSON(List<Nota> notas) {
 
         String notasJSON = "[";
 

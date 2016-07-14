@@ -44,13 +44,14 @@ public class TestParecerDAO {
         //*
         System.out.println("test_persisteParecer() -> " + testResults[0] + "\n" +
                 "test_byId() -> " + testResults[1] + "\n" +
-                "test_adicionaNota() -> " + testResults[2] + "\n" +
-                "test_removeNota() -> " + testResults[3] + "\n" +
+                "test_adicionaNota()* -> " + testResults[2] + "\n" +
+                "test_removeNota()* -> " + testResults[3] + "\n" +
                 "test_atualizaFundamentacao() -> " + testResults[4] + "\n" +
                 "test_persisteRadoc() -> " + testResults[5] + "\n" +
                 "test_radocById() -> " + testResults[6] + "\n" +
                 "test_removeRadoc() -> " + testResults[7] + "\n" +
                 "test_removeParecer() -> " + testResults[8] + "\n");
+        System.out.println(" * Os testes de adição e remoção de notas estão falhando porque o objeto instanciado para o teste difere da estrutura do que é serializado pelo gson, apesar de seu conteúdo ser idêntico. Esse fenômeno acontece pois o gson inicializa os valores padrão de todos os atributos de cada valor, enquanto que os valores instanciados para teste não o fazem por utilizarem o construtor normalmente.");
         //*/
         /* Save JSON Object using Gson
         Gson gson = new Gson();
